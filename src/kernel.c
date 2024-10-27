@@ -1,5 +1,6 @@
 #include "kernel.h"
 #include "idt/idt.h"
+#include "io/io.h"
 
 uint16_t* vedio_mem = 0;
 uint16_t terminal_row = 0;
@@ -60,4 +61,6 @@ void kernel_main() {
     print("Hello World!\ntest\n");
 
     idt_init();    
+
+    outb(0x60, 0xFF);
 }

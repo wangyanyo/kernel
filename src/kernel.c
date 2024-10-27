@@ -60,7 +60,7 @@ void kernel_main() {
     terminal_initialize();
     print("Hello World!\ntest\n");
 
-    idt_init();    
+    idt_init();
 
-    outb(0x60, 0xFF);
+    
 }

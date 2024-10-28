@@ -65,11 +65,5 @@ void kernel_main() {
 
     idt_init();
 
-    void* ptr1 = kmalloc(50);
-    void* ptr2 = kmalloc(50);
-    kfree(ptr1);
-    void* ptr3 = kmalloc(50);
-    
-    kfree(ptr2);
-    kfree(ptr3);
+    enable_interrupts();
 }

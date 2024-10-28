@@ -1,6 +1,7 @@
 #include "kernel.h"
 #include "idt/idt.h"
 #include "io/io.h"
+#include "memory/heap/kheap.h"
 
 uint16_t* vedio_mem = 0;
 uint16_t terminal_row = 0;
@@ -60,7 +61,15 @@ void kernel_main() {
     terminal_initialize();
     print("Hello World!\ntest\n");
 
+    kheap_init();
+
     idt_init();
 
+    void* ptr1 = kmalloc(50);
+    void* ptr2 = kmalloc(50);
+    kfree(ptr1);
+    void* ptr3 = kmalloc(50);
     
+    kfree(ptr2);
+    kfree(ptr3);
 }

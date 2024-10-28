@@ -2,6 +2,7 @@
 #include "memory/memory.h"
 #include "kernel.h"
 #include "io/io.h"
+#include "config.h"
 
 struct idt_desc idt_descriptors[KERNEL_TOTAL_INTERRUPTS];
 struct idtr_desc idtr_descriptor;
@@ -42,7 +43,7 @@ void idt_init() {
     }
 
     idt_set(0, idt_zero);
-    idt_set(0x20, int21h);
+    idt_set(0x21, int21h);
 
     idt_load(&idtr_descriptor);
 }

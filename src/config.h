@@ -12,4 +12,6 @@
 // 内存表放在引导程序后面
 #define KERNEL_HEAP_TABLE_ADDRESS 0x00007E00
 
+#define KERNEL_SECTOR_SIZE 512
+
 #endif

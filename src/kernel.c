@@ -58,26 +58,29 @@ void print(const char* str) {
     }
 }
 
-// 内核也有页表
 static struct paging_4gb_chunk* kernel_chunk = 0;
 void kernel_main() {
-    // 不用分配内存，直接操作内存
+    // 初始化终端
     terminal_initialize();
+
     print("Hello World!\ntest\n");
 
+    // 初始化内存管理
     kheap_init();
 
+    // 初始化磁盘驱动
+    disk_search_and_init();
+
+    // 初始化中断描述符表
     idt_init();
 
-    // 可写，有效，全优先级可读
+    // 初始化分页虚拟内存
     kernel_chunk = paging_new_4gb(PAGING_IS_WRITEABLE | PAGING_IS_PERSENT | PAGING_ACCESS_FROM_ALL);
 
     paging_switch(paging_4gb_chunk_get_directory(kernel_chunk));
 
     enable_paging();
 
-    char buf[512];
-    disk_read_sector(0, 1, buf);
-
+    // 恢复中断
     enable_interrupts();
 }

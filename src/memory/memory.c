@@ -1,10 +1,22 @@
 #include "memory.h"
 
 void* memset(void* ptr, int c, size_t size) {
-    char* c_ptr = (char*) ptr;
-    for(int i = 0; i < size; ++i) {
-        c_ptr[i] = (char)c;
+    int* i_ptr = (int*) ptr;
+    int t = c & 0xFF;
+    int res = (t << 24) | (t << 16) | (t << 8) | t;
+
+    int i, limit = size - 3;
+    for(i = 0; i < limit; i += 4) {
+        *i_ptr = res;
+        i_ptr++;
     }
+
+    char* c_ptr = (char*)i_ptr;
+    for(; i < size; ++i) {
+        *c_ptr = (char)t;
+        c_ptr++;
+    }
+
     return ptr;
 }
 

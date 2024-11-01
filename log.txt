@@ -89,3 +89,5 @@
       写内核尽量不要使用递归，因为内核中没有保护机制，我们绝对不想看到栈溢出的情况，那会使计算机崩溃。
       add-symbol-file ../build/kernelfull.o 0x100000
       target remote | qemu-system-i386 -hda ./os.bin -S -gdb stdio
+15. 创建分页时过慢，接下来解决这个问题。主要是kzalloc()的memset太慢，我将char换成int，一次赋值4个字节。经过这样的优化后，速度
+    确实快了一些。但最让我不解的是为什么一个 1024 * 1024 的循环跑了1s的时间？是模拟器太慢了吗？

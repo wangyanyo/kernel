@@ -6,6 +6,7 @@
 #include "disk/disk.h"
 #include "fs/pparser.h"
 #include "string/string.h"
+#include "disk/streamer.h"
 
 uint16_t* vedio_mem = 0;
 uint16_t terminal_row = 0;
@@ -52,6 +53,18 @@ void print(const char* str) {
     }
 }
 
+void print_num(int num) {
+    char str[15];
+    int cnt = 0;
+    while(num) {
+        str[cnt++] = num % 10 + '0';
+        num /= 10;
+    }
+    for(int i = cnt - 1; i >= 0; --i) {
+        terminal_writechar(str[i], 15);
+    }
+}
+
 static struct paging_4gb_chunk* kernel_chunk = 0;
 void kernel_main() {
     // 初始化终端
@@ -69,7 +82,7 @@ void kernel_main() {
     idt_init();
 
     // 初始化分页虚拟内存
-    kernel_chunk = paging_new_4gb(PAGING_IS_WRITEABLE | PAGING_IS_PERSENT | PAGING_ACCESS_FROM_ALL);
+    kernel_chunk = paging_new_4gb(PAGING_IS_WRITEABLE | PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);
 
     paging_switch(paging_4gb_chunk_get_directory(kernel_chunk));
 
@@ -82,4 +95,14 @@ void kernel_main() {
     if(path_root) {
         
     }
+
+    struct disk_stream* streamer = diskstreamer_new(0);
+    streamer->pos = 0x201;
+    unsigned char c;
+    int res = diskstreamer_read(streamer, &c, 1);
+    print_num((int)c);
+    if(res) {
+
+    }
+    
 }

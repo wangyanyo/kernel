@@ -9,5 +9,6 @@
 
 void kernel_main();
 void print(const char* str);
+void print_num(int num);
 
 #endif

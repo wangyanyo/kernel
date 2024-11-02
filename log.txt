@@ -100,3 +100,7 @@
       错误代码：idtr_descriptor.limit = KERNEL_TOTAL_INTERRUPTS;
       正确代码：idtr_descriptor.limit = sizeof(idt_descriptors) -1;
       像这种一定要小心设置，因为这是固定的，类似公式的东西。
+17. 在引导程序里增加了FAT16头，加上这个之后，linux就可以识别出我这个os.bin是一个文件系统，然后就可以把linux的一个文件夹挂载到
+    我的内核程序上。FAT16头包含了一些文件系统的基本信息，比如一个扇区多少字节，一个集群多少扇区，多少个保留扇区等等，也是类似公式
+    的东西，这个一定不能写错。
+    

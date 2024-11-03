@@ -4,6 +4,7 @@
 #include "status.h"
 #include "memory/heap/kheap.h"
 #include "kernel.h"
+#include "fs/fat/fat16.h"
 
 struct filesystem* filesystems[KERNEL_MAX_FILESYSTEM];
 struct file_descriptor* file_descriptors[KERNEL_MAX_FILE_DESCRIPTORS];
@@ -33,7 +34,7 @@ void fs_insert_filesystem(struct filesystem* filesystem)
 
 static void fs_static_load() 
 {
-    // fs_insert_filesystem(fat16_init());
+    fs_insert_filesystem(fat16_init());
 }
 
 static void fs_load()

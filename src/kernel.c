@@ -7,6 +7,7 @@
 #include "fs/pparser.h"
 #include "string/string.h"
 #include "disk/streamer.h"
+#include "fs/file.h"
 
 uint16_t* vedio_mem = 0;
 uint16_t terminal_row = 0;
@@ -75,6 +76,9 @@ void kernel_main() {
     // 初始化内存管理
     kheap_init();
 
+    // 加载文件系统
+    fs_init();
+
     // 初始化磁盘驱动
     disk_search_and_init();
 
@@ -90,19 +94,5 @@ void kernel_main() {
 
     // 恢复中断
     enable_interrupts();
-
-    struct path_root* path_root = pathparser_parse("0:/bin/shell.exe", 0);
-    if(path_root) {
-        
-    }
-
-    struct disk_stream* streamer = diskstreamer_new(0);
-    streamer->pos = 0x201;
-    unsigned char c;
-    int res = diskstreamer_read(streamer, &c, 1);
-    print_num((int)c);
-    if(res) {
-
-    }
     
 }

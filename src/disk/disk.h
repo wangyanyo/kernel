@@ -5,9 +5,12 @@ typedef unsigned int KERNEL_DISK_TYPE;
 
 #define KERNEL_DISK_TYPE_REAL 0
 
+#include <fs/file.h>
+
 struct disk {
     KERNEL_DISK_TYPE type;
     int sector_size;
+    struct filesystem* filesystem;
 };
 
 void disk_search_and_init();

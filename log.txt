@@ -118,3 +118,10 @@
       总之，VFS是一层灵活的抽象，它可以让我们的内核使用多个文件系统。
 20. 新增了fat16文件系统的框架，以及其与VFS的对接。写完接口定义后，接下来我们就要开始写fopen, fread, fwrite, fclose, fstat的
     实现细节，这是文件系统最关键的部分。
+21. 新增了fat16相关的结构，其中包含了fat16_header用于识别fat16文件系统，fat16_header_extended存储一些扩展信息,fat16_h代表
+    一个完整的fat16头。fat_directory_item定义了文件的属性；fat_directory代表文件夹，相较于fat_directory_item要额外存储一
+    些东西；fat_item代表文件项，它指向文件夹或文件，通过一个类型变量来识别。如果用户要打开文件，我们返回fat_item_descriptor，
+    里面有指向fat_item的指针。对于该磁盘的fat16系统，我们持有一个fat_private，目前作用未知。
+      在设计结构的时候需要经验，什么时候用指针，什么时候不用。用指针更节省空间，但也更麻烦，比如需要释放空间或者多个对象共用同一块
+    空间等等。
+      通过 指针 + union + 函数指针 可以实现所有的面向对象特性。

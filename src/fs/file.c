@@ -5,6 +5,9 @@
 #include "memory/heap/kheap.h"
 #include "kernel.h"
 #include "fs/fat/fat16.h"
+#include "disk/disk.h"
+#include "pparser.h"
+#include "string/string.h"
 
 struct filesystem* filesystems[KERNEL_MAX_FILESYSTEM];
 struct file_descriptor* file_descriptors[KERNEL_MAX_FILE_DESCRIPTORS];
@@ -50,22 +53,22 @@ void fs_init()
     fs_load();
 }
 
-int fopen(const char* filename, const char* mode) 
+static FILE_MODE file_get_mode_by_string(const char* str) 
 {
-    return -EIO;
-}
-
-struct filesystem* fs_resolve(struct disk* disk) 
-{
-    for(int i = 0; i < KERNEL_MAX_FILESYSTEM; ++i) 
+    FILE_MODE mode = FILE_MODE_INVALID;
+    if(strncmp(str, "r", 1) == 0)
     {
-        if(filesystems[i] != 0 && filesystems[i]->resolve(disk) == 0)
-        {
-            return filesystems[i];
-        }
+        mode = FILE_MODE_READ;
     }
-
-    return 0;
+    else if(strncmp(str, "w", 1) == 0) 
+    {
+        mode = FILE_MODE_WRITE;
+    }
+    else if(strncmp(str, "a", 1) == 0)
+    {
+        mode = FILE_MODE_APPEND;
+    }
+    return mode;
 }
 
 static int file_new_descriptor(struct file_descriptor** desc_out) 
@@ -86,3 +89,80 @@ static int file_new_descriptor(struct file_descriptor** desc_out)
     
     return res;
 }
+
+int fopen(const char* filename, const char* mode_str) 
+{
+    int res = 0;
+
+    struct path_root* path_root = pathparser_parse(filename, 0);
+    if(!path_root)
+    {
+        res = -EINVARG;
+        goto out;
+    }
+
+    if(!path_root->first)
+    {
+        res = -EINVARG;
+        goto out;
+    }
+
+    struct disk* disk = disk_get(path_root->drive_no);
+    if(!disk)
+    {
+        res = -EIO;
+        goto out;
+    }
+
+    if(!disk->filesystem)
+    {
+        res = -EIO;
+        goto out;
+    }
+
+    FILE_MODE mode = file_get_mode_by_string(mode_str);
+    if(mode == FILE_MODE_INVALID)
+    {
+        res = -EINVARG;
+        goto out;
+    }
+
+    void* descriptor_private_data = disk->filesystem->open(disk, path_root->first, mode);
+    if(ISERR(descriptor_private_data))
+    {
+        res = ERROR_I(descriptor_private_data);
+        goto out;
+    }
+
+    struct file_descriptor* desc = 0;
+    res = file_new_descriptor(&desc);
+    if(res < 0)
+    {
+        goto out;
+    }
+
+    desc->disk = disk;
+    desc->filesystem = disk->filesystem;
+    desc->private = descriptor_private_data;
+    res = desc->index;
+
+out:
+    if(res < 0)
+        res = 0;
+
+    return res;
+}
+
+struct filesystem* fs_resolve(struct disk* disk) 
+{
+    for(int i = 0; i < KERNEL_MAX_FILESYSTEM; ++i) 
+    {
+        if(filesystems[i] != 0 && filesystems[i]->resolve(disk) == 0)
+        {
+            return filesystems[i];
+        }
+    }
+
+    return 0;
+}
+

@@ -7,10 +7,13 @@ typedef unsigned int KERNEL_DISK_TYPE;
 
 #include <fs/file.h>
 
-struct disk {
+struct disk 
+{
     KERNEL_DISK_TYPE type;
     int sector_size;
     struct filesystem* filesystem;
+    int id;
+    void* fs_private;
 };
 
 void disk_search_and_init();

@@ -24,6 +24,7 @@ void* kmalloc(size_t size) {
 }
 
 void kfree(void* ptr) {
+    if(ptr == 0) return;
     heap_free(&kernel_heap, ptr);
 }
 

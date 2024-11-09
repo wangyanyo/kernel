@@ -153,6 +153,17 @@ out:
     return res;
 }
 
+static struct file_descriptor* file_get_descriptor(int fd)
+{
+    if(fd <= 0 || fd > KERNEL_MAX_FILE_DESCRIPTORS)
+    {
+        return 0;
+    }
+
+    int index = fd - 1;
+    return file_descriptors[index];
+}
+
 struct filesystem* fs_resolve(struct disk* disk) 
 {
     for(int i = 0; i < KERNEL_MAX_FILESYSTEM; ++i) 
@@ -166,3 +177,24 @@ struct filesystem* fs_resolve(struct disk* disk)
     return 0;
 }
 
+int fread(void* ptr, uint32_t size, uint32_t nmemb, int fd)
+{
+    int res = 0;
+    if(size == 0 || nmemb == 0 || fd < 1)
+    {
+        res = -EINVARG;
+        goto out;
+    }
+
+    struct file_descriptor* desc = file_get_descriptor(fd);
+    if(!desc)
+    {
+        res = -EINVARG;
+        goto out;
+    }
+
+    res = desc->filesystem->read(desc->disk, desc->private, size, nmemb, (char*)ptr);
+
+out:
+    return res;
+}

@@ -57,6 +57,7 @@ void print(const char* str) {
 void print_num(int num) {
     char str[15];
     int cnt = 0;
+    if(num == 0) str[cnt++] = '0';
     while(num) {
         str[cnt++] = num % 10 + '0';
         num /= 10;
@@ -99,7 +100,13 @@ void kernel_main() {
     if(fd)
     {
         print_num(fd);
-        print("\nfopen success");
+        print("\nfopen success\n");
+        char buf[14];
+        int res = fread(buf, 13, 1, fd);
+        if(res > 0)
+        {
+            print(buf);
+        }
     }
     
 }

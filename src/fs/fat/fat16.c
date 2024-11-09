@@ -11,6 +11,7 @@
 
 void* fat16_open(struct disk* disk, struct path_part* path, FILE_MODE mode);
 int fat16_resolve(struct disk* disk);
+int fat16_read(struct disk* disk, void* descriptor, uint32_t size, uint32_t nmemb, char* out_ptr);
 
 #define KERNEL_FAT16_SIGNATURE 0x29
 #define KERNEL_FAT16_FAT_ENTRY_SIZE 0x02
@@ -123,7 +124,8 @@ struct fat_private
 struct filesystem fat16_fs = 
 {
     .open = fat16_open,
-    .resolve = fat16_resolve
+    .resolve = fat16_resolve,
+    .read = fat16_read
 };
 
 struct filesystem* fat16_init() 
@@ -159,8 +161,7 @@ static int fat16_get_first_cluster(struct fat_directory_item* item)
 
 static int fat16_cluster_to_sector(struct fat_private* private, int cluster)
 {
-    #warning I think it should not to use ending_sector_pos, it should be \
-        reserved_sectors + (fat_copies * sector_per_fat) + cluster * sectors_per_cluster
+    // note: Even though it may seem strange, it is correct. you can use ghex to check it.
     return private->root_directory.ending_sector_pos + ((cluster - 2) * private->header.primary_header.sectors_per_cluster);
 }
 
@@ -554,7 +555,7 @@ static int fat16_get_total_items_for_directory(struct disk* disk, uint32_t direc
             break;
         }
 
-        #warning If we don not count this unused item, we will have problem on read function
+        #warning If we don not count this unused item, we will have problem on fopen
         // unused item
         if(item.filename[0] == 0xE5)
         {
@@ -614,7 +615,8 @@ static int fat16_get_root_directory(struct disk* disk, struct fat_private* fat_p
     directory->item = dir;
     directory->total = total_items;
     directory->sector_pos = root_dir_sector_pos;
-    #warning if (rootroot_dir_size % disk->sector_size != 0) ?
+    //note: This is get_root_directoty, root_dir_size = 0x40 * 32 = 4 * 512, which % disk->sector_size == 0 \
+        and this ending_sector_pos is useful, it is the begining of cluster, you can use ghex to check it.
     directory->ending_sector_pos = root_dir_sector_pos + (root_dir_size / disk->sector_size);
 
 out:
@@ -684,3 +686,30 @@ out:
     return res;
 }
 
+int fat16_read(struct disk* disk, void* descriptor, uint32_t size, uint32_t nmemb, char* out_ptr)
+{
+    int res = 0;
+    struct fat_item_descriptor* fat_desc = descriptor;
+    struct fat_directory_item* item = fat_desc->item->item;
+    int offset = fat_desc->pos;
+
+    for(int i = 0; i < nmemb; ++i)
+    {
+        res = fat16_read_internal(disk, fat16_get_first_cluster(item), offset, size, out_ptr);
+        if(ISERR(res))
+        {
+            goto out;
+        }
+
+        out_ptr += size;
+        offset += size;
+    }
+
+    res = nmemb;
+
+    #warning author not add this, But I think it is necessary.
+    fat_desc->pos += size * nmemb;
+
+out:
+    return res;
+}

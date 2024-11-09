@@ -39,6 +39,8 @@ void* memcpy(void* dest, void* src, int len)
     while(len-- > 0)
     {
         *d = *s;
+        d += 1;
+        s += 1;
     }
     return dest;
 }

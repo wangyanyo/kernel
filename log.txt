@@ -144,3 +144,6 @@
     找到后开始读取，offset+=total_to_read, out+=total_to_read, 然后进行下一次读取，最终将所有目录项全部读取。
       最终VFS获得了fat_item，我们成功新建了一个文件描述符，我们知道这个文件存在，也知道的它的disk, fs 和fat_firectory_item里
     的信息，我们可以使用这些信息进行读写。fopen帮我们找到这个文件，并提供这个文件的信息，它占用内存，也占用文件描述符。
+25. 写了fread, 从VFS角度看就是做一些参数检查，并且调用对应文件系统的fread; 对于fat16, 我们做的就是使用fat16_read_internal()
+    读取起点为starting_cluster, 位置为offset, 大小为size的数据，做nmemb次循环。我认为读完要更新pos, 但是原作者没更新。
+      还有就是根目录的ending_sector_pos是有用的，它是cluster的起点，我通过检查ghex发现了这一点。

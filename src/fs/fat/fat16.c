@@ -426,7 +426,7 @@ static struct fat_item* fat16_find_item_in_directory(struct disk* disk, struct f
     for(int i = 0; i < directory->total; ++i)
     {
         fat16_get_full_relative_filename(&directory->item[i], tmp_filename, sizeof(tmp_filename));
-        if(istrncmp(tmp_filename, name, sizeof(tmp_filename)))
+        if(istrncmp(tmp_filename, name, sizeof(tmp_filename)) == 0)
         {
             f_item = fat16_new_fat_item_for_directory_item(disk, &directory->item[i]);
             break;

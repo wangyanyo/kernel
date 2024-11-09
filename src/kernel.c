@@ -94,5 +94,12 @@ void kernel_main() {
 
     // 恢复中断
     enable_interrupts();
+
+    int fd = fopen("0:/hello.txt", "r");
+    if(fd)
+    {
+        print_num(fd);
+        print("\nfopen success");
+    }
     
 }

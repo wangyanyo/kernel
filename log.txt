@@ -147,3 +147,4 @@
 25. 写了fread, 从VFS角度看就是做一些参数检查，并且调用对应文件系统的fread; 对于fat16, 我们做的就是使用fat16_read_internal()
     读取起点为starting_cluster, 位置为offset, 大小为size的数据，做nmemb次循环。我认为读完要更新pos, 但是原作者没更新。
       还有就是根目录的ending_sector_pos是有用的，它是cluster的起点，我通过检查ghex发现了这一点。
+26. 新增了fseek，其实就是修改pos的值，文件描述符记录了文件的所有信息，除了文件内容。

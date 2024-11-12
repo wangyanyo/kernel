@@ -102,7 +102,8 @@ void kernel_main() {
         print_num(fd);
         print("\nfopen success\n");
         char buf[14];
-        int res = fread(buf, 13, 1, fd);
+        fseek(fd, 2, SEEK_SET);
+        int res = fread(buf, 11, 1, fd);
         if(res > 0)
         {
             print(buf);

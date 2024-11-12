@@ -12,6 +12,7 @@
 void* fat16_open(struct disk* disk, struct path_part* path, FILE_MODE mode);
 int fat16_resolve(struct disk* disk);
 int fat16_read(struct disk* disk, void* descriptor, uint32_t size, uint32_t nmemb, char* out_ptr);
+int fat16_seek(void* private, uint32_t offset, FILE_SEEK_MODE seek_mode);
 
 #define KERNEL_FAT16_SIGNATURE 0x29
 #define KERNEL_FAT16_FAT_ENTRY_SIZE 0x02
@@ -125,7 +126,8 @@ struct filesystem fat16_fs =
 {
     .open = fat16_open,
     .resolve = fat16_resolve,
-    .read = fat16_read
+    .read = fat16_read,
+    .seek = fat16_seek
 };
 
 struct filesystem* fat16_init() 
@@ -615,8 +617,8 @@ static int fat16_get_root_directory(struct disk* disk, struct fat_private* fat_p
     directory->item = dir;
     directory->total = total_items;
     directory->sector_pos = root_dir_sector_pos;
-    //note: This is get_root_directoty, root_dir_size = 0x40 * 32 = 4 * 512, which % disk->sector_size == 0 \
-        and this ending_sector_pos is useful, it is the begining of cluster, you can use ghex to check it.
+    //note: This is get_root_directoty, root_dir_size = 0x40 * 32 = 4 * 512, which % disk->sector_size == 0
+    //    and this ending_sector_pos is useful, it is the begining of cluster, you can use ghex to check it.
     directory->ending_sector_pos = root_dir_sector_pos + (root_dir_size / disk->sector_size);
 
 out:
@@ -709,6 +711,50 @@ int fat16_read(struct disk* disk, void* descriptor, uint32_t size, uint32_t nmem
 
     #warning author not add this, But I think it is necessary.
     fat_desc->pos += size * nmemb;
+
+out:
+    return res;
+}
+
+int fat16_seek(void* private, uint32_t offset, FILE_SEEK_MODE seek_mode)
+{
+    int res = 0;
+
+    struct fat_item_descriptor* desc = private;
+    struct fat_item* desc_item = desc->item;
+    
+    if(desc_item->type != FAT_ITEM_TYPE_FILE)
+    {
+        res = -EINVARG;
+        goto out;
+    }
+
+    struct fat_directory_item* ritem = desc_item->item;
+    if(offset >= ritem->filesize)
+    {
+        res = -EIO;
+        goto out;
+    }
+
+    switch(seek_mode)
+    {
+        case SEEK_SET:
+            desc->pos = offset;
+            break;
+
+        case SEEK_END:
+            res = -EUNIMP;
+            break;
+
+        case SEEK_CUR:
+            #warning I think this check is necessary
+            desc->pos += (desc->pos + offset < ritem->filesize) ? offset : 0;
+            break;
+
+        default:
+            res = -EINVARG;
+            break;
+    }
 
 out:
     return res;

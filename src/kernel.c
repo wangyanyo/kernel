@@ -99,15 +99,18 @@ void kernel_main() {
     int fd = fopen("0:/hello.txt", "r");
     if(fd)
     {
-        print_num(fd);
-        print("\nfopen success\n");
-        char buf[14];
-        fseek(fd, 2, SEEK_SET);
-        int res = fread(buf, 11, 1, fd);
-        if(res > 0)
-        {
-            print(buf);
-        }
+        // print_num(fd);
+        // print("\nfopen success\n");
+        // char buf[14];
+        // fseek(fd, 2, SEEK_SET);
+        // int res = fread(buf, 11, 1, fd);
+        // if(res > 0)
+        // {
+        //     print(buf);
+        // }
+        struct file_stat stat;
+        fstat(fd, &stat);
+        while(1){}
     }
     
 }

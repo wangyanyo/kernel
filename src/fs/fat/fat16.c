@@ -13,6 +13,7 @@ void* fat16_open(struct disk* disk, struct path_part* path, FILE_MODE mode);
 int fat16_resolve(struct disk* disk);
 int fat16_read(struct disk* disk, void* descriptor, uint32_t size, uint32_t nmemb, char* out_ptr);
 int fat16_seek(void* private, uint32_t offset, FILE_SEEK_MODE seek_mode);
+int fat16_stat(struct disk* disk, void* private, struct file_stat* stat);
 
 #define KERNEL_FAT16_SIGNATURE 0x29
 #define KERNEL_FAT16_FAT_ENTRY_SIZE 0x02
@@ -127,7 +128,8 @@ struct filesystem fat16_fs =
     .open = fat16_open,
     .resolve = fat16_resolve,
     .read = fat16_read,
-    .seek = fat16_seek
+    .seek = fat16_seek,
+    .stat = fat16_stat
 };
 
 struct filesystem* fat16_init() 
@@ -711,6 +713,30 @@ int fat16_read(struct disk* disk, void* descriptor, uint32_t size, uint32_t nmem
 
     #warning author not add this, But I think it is necessary.
     fat_desc->pos += size * nmemb;
+
+out:
+    return res;
+}
+
+int fat16_stat(struct disk* disk, void* private, struct file_stat* stat)
+{
+    int res = 0;
+    struct fat_item_descriptor* desc = private;
+    struct fat_item* desc_item = desc->item;
+    if(desc_item->type != FAT_ITEM_TYPE_FILE)
+    {
+        res = -EINVARG;
+        goto out;
+    }
+
+    struct fat_directory_item* ritem = desc_item->item;
+    stat->filesize = ritem->filesize;
+    stat->flags = 0x00;
+
+    if(ritem->attribute & FILE_STAT_READ_ONLY)
+    {
+        stat->flags |= FILE_STAT_READ_ONLY;
+    }
 
 out:
     return res;

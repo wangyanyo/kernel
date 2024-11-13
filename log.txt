@@ -148,3 +148,5 @@
     读取起点为starting_cluster, 位置为offset, 大小为size的数据，做nmemb次循环。我认为读完要更新pos, 但是原作者没更新。
       还有就是根目录的ending_sector_pos是有用的，它是cluster的起点，我通过检查ghex发现了这一点。
 26. 新增了fseek，其实就是修改pos的值，文件描述符记录了文件的所有信息，除了文件内容。
+27. 函数指针 + void* private 实现了继承和多态。函数指针实现了虚函数，void* private 实现了子类的独有成员。也就是说可以将一个类
+    配置成完全不同的版本，函数指针指向该版本的函数，void* private 指向该版本独有的数据成员。

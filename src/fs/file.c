@@ -177,6 +177,22 @@ struct filesystem* fs_resolve(struct disk* disk)
     return 0;
 }
 
+int fstat(int fd, struct file_stat* stat)
+{
+    int res = 0;
+    struct file_descriptor* desc = file_get_descriptor(fd);
+    if(!desc)
+    {
+        res = -EINVARG;
+        goto out;
+    }
+
+    res = desc->filesystem->stat(desc->disk, desc->private, stat);
+
+out:
+    return res;
+}
+
 int fseek(int fd, int offset, FILE_SEEK_MODE whence)
 {
     int res = 0;

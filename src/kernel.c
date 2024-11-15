@@ -67,6 +67,12 @@ void print_num(int num) {
     }
 }
 
+void panic(const char *msg)
+{
+    print(msg);
+    while(1){}
+}
+
 static struct paging_4gb_chunk* kernel_chunk = 0;
 void kernel_main() {
     // 初始化终端

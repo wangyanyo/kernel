@@ -155,6 +155,7 @@ out:
 
 static struct file_descriptor* file_get_descriptor(int fd)
 {
+    #warning author write fd >= KENEL_MAX_FILE_DESCRIPTORS
     if(fd <= 0 || fd > KERNEL_MAX_FILE_DESCRIPTORS)
     {
         return 0;
@@ -162,6 +163,12 @@ static struct file_descriptor* file_get_descriptor(int fd)
 
     int index = fd - 1;
     return file_descriptors[index];
+}
+
+static void file_free_descriptor(struct file_descriptor* desc)
+{
+    file_descriptors[desc->index - 1] = 0x00;
+    kfree(desc);
 }
 
 struct filesystem* fs_resolve(struct disk* disk) 
@@ -219,6 +226,10 @@ int fclose(int fd)
         goto out;
     }
     res = desc->filesystem->close(desc->private);
+    if(res == KERNEL_ALL_OK)
+    {
+        file_free_descriptor(desc);
+    }
 out:
     return res;
 }

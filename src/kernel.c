@@ -110,6 +110,8 @@ void kernel_main() {
         // }
         struct file_stat stat;
         fstat(fd, &stat);
+        fclose(fd);
+        print("fs_test\n");
         while(1){}
     }
     

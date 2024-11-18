@@ -6,7 +6,7 @@ gdt_load:
     mov [gdt_descriptor + 2], eax
     mov ax, [esp + 8]
     mov [gdt_descriptor], ax
-    lgdt gdt_descrigdt_loadptor
+    lgdt [gdt_descriptor]
     ret
 
 section .data

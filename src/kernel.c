@@ -8,6 +8,9 @@
 #include "string/string.h"
 #include "disk/streamer.h"
 #include "fs/file.h"
+#include "gdt/gdt.h"
+#include "config.h"
+#include "memory/memory.h"
 
 uint16_t* vedio_mem = 0;
 uint16_t terminal_row = 0;
@@ -74,11 +77,23 @@ void panic(const char *msg)
 }
 
 static struct paging_4gb_chunk* kernel_chunk = 0;
+
+struct gdt gdt_real[KERNEL_TOTAL_GDT_SEGMENTS];
+struct gdt_structured gdt_structured[KERNEL_TOTAL_GDT_SEGMENTS] = {
+    {.base = 0x00, .limit = 0x00, .type = 0x00},
+    {.base = 0x00, .limit = 0xffffffff, .type = 0x9a},
+    {.base = 0x00, .limit = 0xffffffff, .type = 0x92}
+};
+
 void kernel_main() {
     // 初始化终端
     terminal_initialize();
 
     print("Hello World!\ntest\n");
+
+    memset(gdt_real, 0x00, sizeof(gdt_real));
+    gdt_structured_to_gdt(gdt_real, gdt_structured, KERNEL_TOTAL_GDT_SEGMENTS);
+    gdt_load(gdt_real, sizeof(gdt_real));
 
     // 初始化内存管理
     kheap_init();

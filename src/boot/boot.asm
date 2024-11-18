@@ -46,6 +46,7 @@ step2:
 .load_protected:
     cli
     lgdt[gdt_descriptor]
+    ; Enable Protect Mode
     mov eax, cr0
     or eax, 0x1
     mov cr0, eax

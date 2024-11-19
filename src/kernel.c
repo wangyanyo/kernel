@@ -11,6 +11,7 @@
 #include "gdt/gdt.h"
 #include "config.h"
 #include "memory/memory.h"
+#include "task/tss.h"
 
 uint16_t* vedio_mem = 0;
 uint16_t terminal_row = 0;
@@ -78,11 +79,15 @@ void panic(const char *msg)
 
 static struct paging_4gb_chunk* kernel_chunk = 0;
 
+struct tss tss;
 struct gdt gdt_real[KERNEL_TOTAL_GDT_SEGMENTS];
 struct gdt_structured gdt_structured[KERNEL_TOTAL_GDT_SEGMENTS] = {
-    {.base = 0x00, .limit = 0x00, .type = 0x00},
-    {.base = 0x00, .limit = 0xffffffff, .type = 0x9a},
-    {.base = 0x00, .limit = 0xffffffff, .type = 0x92}
+    {.base = 0x00, .limit = 0x00, .type = 0x00},                    // 空段
+    {.base = 0x00, .limit = 0xffffffff, .type = 0x9a},              // 内核代码段
+    {.base = 0x00, .limit = 0xffffffff, .type = 0x92},              // 内核数据段
+    {.base = 0x00, .limit = 0xffffffff, .type = 0xf8},              // 用户代码段
+    {.base = 0x00, .limit = 0xffffffff, .type = 0xf2},              // 用户数据段
+    // {.base = (uint32_t)&tss, .limit = sizeof(tss), .type = 0xE9}    // 内核进程
 };
 
 void kernel_main() {
@@ -90,6 +95,11 @@ void kernel_main() {
     terminal_initialize();
 
     print("Hello World!\ntest\n");
+
+    // 这是内核进程的TSS，vscode默认指针64位，因此放在上面会有截断报错波浪线，不美观所以移到下面，功能不变
+    gdt_structured[5].base = (uint32_t)&tss;
+    gdt_structured[5].limit = sizeof(tss);
+    gdt_structured[5].type = 0xE9;
 
     memset(gdt_real, 0x00, sizeof(gdt_real));
     gdt_structured_to_gdt(gdt_real, gdt_structured, KERNEL_TOTAL_GDT_SEGMENTS);
@@ -106,6 +116,14 @@ void kernel_main() {
 
     // 初始化中断描述符表
     idt_init();
+
+    // 初始化tss
+    memset(&tss, 0x00, sizeof(tss));
+    tss.esp = 0x600000;
+    // 这个 KERNEL_DATA_SELECTOR 应该是GDT第三个entry，即内核数据段的意思
+    tss.ss = KERNEL_DATA_SELECTOR;
+    // 为什么这里是0x28，0x28 = 40，0号进程前面有5个gdt项，5 * 8 = 40
+    tss_load(0x28);
 
     // 初始化分页虚拟内存
     kernel_chunk = paging_new_4gb(PAGING_IS_WRITEABLE | PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);

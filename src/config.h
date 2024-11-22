@@ -21,4 +21,16 @@
 
 #define KERNEL_TOTAL_GDT_SEGMENTS 6
 
+// 前面预留了4MB
+#define KERNEL_PROGRAM_VIRTUAL_ADDRESS 0x400000
+#define KERNEL_USER_PROGRAM_STACK_SIZE 1024 * 16
+#warning 这个栈地址很奇怪，他竟然比代码段的起始地址要小，按理说栈是位于高地址向低地址增长的
+#define KERNEL_PROGRAM_VIRTUAL_STACK_ADDRESS_START 0x3FF000
+#warning 难道说这个是内核栈吗? 那为什么中间要预留4096字节的空间?
+#define KERNEL_PROGRAM_VIRTUAL_STACK_ADDRESS_END KERNEL_PROGRAM_VIRTUAL_STACK_ADDRESS_START - KERNEL_USER_PROGRAM_STACK_SIZE
+
+#warning 原作者写的是0x23和0x1b, 每个GDT都占8个字节, 我不知道为什么他的偏移量要加三个字节
+#define USER_DATA_SEGMENT 0x20
+#define USER_CODE_SEGMENT 0x18
+
 #endif

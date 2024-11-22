@@ -48,4 +48,5 @@ Segment Selector:
     0~1: RPL, 代表selector的权限等级，选择器的请求特权级别决定了选择器在权限检查期间是否有效，并可以设置执行或内存访问权限。
 
 Global Descriptor Table(GDT):
-    在Real Mode的介绍中说，GDT是基于硬件的内存保护。GDT是特定于IA-32和x86-64体系结构的二进制数据结构。
+    在Real Mode的介绍中说，GDT是基于硬件的内存保护。GDT是特定于IA-32和x86-64体系结构的二进制数据结构。它告诉CPU内存段的entry，
+    

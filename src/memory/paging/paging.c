@@ -8,6 +8,7 @@ static uint32_t* current_directory = 0;
 
 struct paging_4gb_chunk *paging_new_4gb(uint8_t flags)
 {
+    #warning 之所以使用二级页表，不就是因为要节省页表空间吗？但是该代码却没有体现这一点
     uint32_t *directory = kzalloc(sizeof(uint32_t) * PAGING_TOTAL_ENTRIES_PER_TABLE);
     int offset = 0;
     for (int i = 0; i < PAGING_TOTAL_ENTRIES_PER_TABLE; i++)
@@ -24,6 +25,18 @@ struct paging_4gb_chunk *paging_new_4gb(uint8_t flags)
     struct paging_4gb_chunk *chunk_4gb = kzalloc(sizeof(struct paging_4gb_chunk));
     chunk_4gb->directory_entry = directory;
     return chunk_4gb;
+}
+
+void paging_free_chunk(struct paging_4gb_chunk* chunk)
+{
+    for(int i = 0; i < 1024; ++i)
+    {
+        uint32_t entry = chunk->directory_entry[i];
+        uint32_t* table = (uint32_t*)(entry & 0xFFFFF000);
+        kfree(table);
+    }
+    kfree(chunk->directory_entry);
+    kfree(chunk);
 }
 
 void paging_switch(uint32_t* directory) {

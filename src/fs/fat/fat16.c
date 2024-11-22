@@ -595,7 +595,7 @@ static int fat16_get_root_directory(struct disk* disk, struct fat_private* fat_p
         total_sectors += 1;
     }
 
-    #warning if total_sectors > sectors_per_cluster ?
+    // 根目录文件数量有限制，不会超过root_dir_entries，因此占用的空间也不会超过一个cluster
     int total_items = fat16_get_total_items_for_directory(disk, root_dir_sector_pos);
 
     struct fat_directory_item* dir = kzalloc(root_dir_size);

@@ -26,5 +26,6 @@ extern void enable_paging();
 
 bool paging_is_aligned(void* virtual_address);
 int paging_set(uint32_t* directory, void* virt, uint32_t val);
+void paging_free_chunk(struct paging_4gb_chunk* chunk);
 
 #endif

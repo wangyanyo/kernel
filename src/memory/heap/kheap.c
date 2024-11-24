@@ -29,6 +29,7 @@ void kfree(void* ptr) {
 }
 
 void* kzalloc(size_t size) {
+    #warning 一次分配的空间太大了, 内核有很多小空间分配需求, 一次分配一页会造成很大的空间浪费, 这是以后要更新的点
     void* ptr = kmalloc(size);
     if(!ptr) {
         return 0;

@@ -8,7 +8,7 @@ static uint32_t* current_directory = 0;
 
 struct paging_4gb_chunk *paging_new_4gb(uint8_t flags)
 {
-    #warning 之所以使用二级页表，不就是因为要节省页表空间吗？但是该代码却没有体现这一点
+    #warning 之所以使用二级页表，不就是因为要节省页表空间吗？但是该代码却没有体现这一点，它初始化了所有页表项
     uint32_t *directory = kzalloc(sizeof(uint32_t) * PAGING_TOTAL_ENTRIES_PER_TABLE);
     int offset = 0;
     for (int i = 0; i < PAGING_TOTAL_ENTRIES_PER_TABLE; i++)
@@ -110,7 +110,9 @@ int paging_map_to(uint32_t* directory, void* virt, void* phys, void* phys_end, i
         goto out;
     }
 
-    #warning 如果以后换成不连续的内存分配, 那么这里还要改一下, 准确的说有很多地方都要改，在内核态中
+    #warning 如果以后换成不连续的内存分配, 那么这里还要改一下, 准确的说有很多地方都要改，因为在内核代码中申请完空间没有建立 \
+        内存映射, 因此在内核代码看来申请的空间是不连续的, 而用户态由于有页表映射，所以没有这个问题。那是不是说内核必须申请连续 \
+        的空间, 而用户程序则无所谓呢? 日后更新内存管理的时候要考虑到这一点.
     uint32_t total_bytes = phys_end - phys;
     int total_pages = total_bytes / PAGING_PAGE_SIZE;
     res = paging_map_range(directory, virt, phys, total_pages, flags);

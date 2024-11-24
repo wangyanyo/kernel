@@ -32,6 +32,19 @@ int tonumericdigit(char c)
     return c - '0';
 }
 
+char* strncpy(char* dest, char* src, int n)
+{
+    char* res = dest;
+    for(int i = 0; i < n && *src != 0; ++i)
+    {
+        *dest = *src;
+        dest += 1;
+        src += 1;
+    }
+    *dest = 0x00;
+    return res;
+}
+
 char* strcpy(char* dest, char* src) 
 {
     char* res = dest;

@@ -56,8 +56,7 @@ out:
     if(ISERR(res) && task)
     {
         kfree(task);
-        #warning 原作者这里写的是return ERROR(res), 很明显他写错了
-        task = 0;
+        return ERROR(res);
     }
     return task;
 }

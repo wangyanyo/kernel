@@ -84,3 +84,37 @@ int paging_set(uint32_t* directory, void* virt, uint32_t val) {
 
     return res;
 }
+
+int paging_map_to(uint32_t* directory, void* virt, void* phys, void* phys_end, int flags)
+{
+    int res = 0;
+    if((uint32_t)virt % PAGING_PAGE_SIZE != 0)
+    {
+        res = -EINVARG;
+        goto out;
+    }
+    if((uint32_t)phys % PAGING_PAGE_SIZE != 0)
+    {
+        res = -EINVARG;
+        goto out;
+    }
+    if((uint32_t)phys_end % PAGING_PAGE_SIZE != 0)
+    {
+        res = -EINVARG;
+        goto out;
+    }
+
+    if((uint32_t)phys_end < (uint32_t)phys)
+    {
+        res = -EINVARG;
+        goto out;
+    }
+
+    #warning 如果以后换成不连续的内存分配, 那么这里还要改一下, 准确的说有很多地方都要改，在内核态中
+    uint32_t total_bytes = phys_end - phys;
+    int total_pages = total_bytes / PAGING_PAGE_SIZE;
+    res = paging_map_range(directory, virt, phys, total_pages, flags);
+
+out:
+    return res;
+}

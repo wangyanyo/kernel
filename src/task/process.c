@@ -11,7 +11,7 @@ static struct process* current_process = 0;
 
 static struct process* processes[KERNEL_MAX_PROCESSES] = {};
 
-static process_init(struct process* process)
+static void process_init(struct process* process)
 {
     memset(process, 0x00, sizeof(struct process));
 }
@@ -99,7 +99,15 @@ static int process_map_memory(struct process* process)
     return res;
 }
 
-int process_load_for_slot(const char* filename, struct process** process, int process_slot)
+static void process_free(struct process* process)
+{
+    task_free(process->task);
+    kfree(process->ptr);
+    kfree(process->stack);
+    kfree(process);
+}
+
+static int process_load_for_slot(const char* filename, struct process** process, int process_slot)
 {
     int res = 0;
     struct process* _process = 0;
@@ -147,7 +155,7 @@ int process_load_for_slot(const char* filename, struct process** process, int pr
 
     _process->task = task;
 
-    res = process_map_memory(process);
+    res = process_map_memory(_process);
     if(res < 0)
     {
         goto out;
@@ -162,7 +170,35 @@ out:
     {
         // free the process data
         // 出错后，在这里统一回收
+        process_free(_process);
     }
 
+    return res;
+}
+
+static int process_get_free_slot()
+{
+    for(int i = 0; i < KERNEL_MAX_PROCESSES; ++i)
+    {
+        if(!processes[i])
+            return i;
+    }
+    return -EISTKN;
+}
+
+int process_load(const char* filename, struct process** process)
+{
+    int res = 0;
+
+    int process_slot = process_get_free_slot();
+    if(process_slot < 0)
+    {   
+        res = -EISTKN;
+        goto out;
+    }
+
+    res = process_load_for_slot(filename, process, process_slot);
+
+out:
     return res;
 }

@@ -32,17 +32,19 @@ int tonumericdigit(char c)
     return c - '0';
 }
 
-char* strncpy(char* dest, char* src, int n)
+char* strncpy(char* dest, const char* src, int count)
 {
-    char* res = dest;
-    for(int i = 0; i < n && *src != 0; ++i)
+    int i;
+    #warning 原作者这里写的是 i < count - 1, 很明显他是错的
+    for(i = 0; i < count; ++i)
     {
-        *dest = *src;
-        dest += 1;
-        src += 1;
+        if(src[i] == 0x00)
+            break;
+        
+        dest[i] = src[i];
     }
-    *dest = 0x00;
-    return res;
+    dest[i] = 0x00;
+    return dest;
 }
 
 char* strcpy(char* dest, char* src) 

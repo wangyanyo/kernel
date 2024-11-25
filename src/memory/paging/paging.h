@@ -28,4 +28,9 @@ bool paging_is_aligned(void* virtual_address);
 int paging_set(uint32_t* directory, void* virt, uint32_t val);
 void paging_free_chunk(struct paging_4gb_chunk* chunk);
 
+void* paging_align_address(void* ptr);
+int paging_map(uint32_t* directory, void* virt, void* phys, int flags);
+int paging_map_range(uint32_t* directory, void* virt, void* phys, int count, int flags);
+int paging_map_to(uint32_t* directory, void* virt, void* phys, void* phys_end, int flags);
+
 #endif

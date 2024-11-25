@@ -29,6 +29,7 @@ struct paging_4gb_chunk *paging_new_4gb(uint8_t flags)
 
 void paging_free_chunk(struct paging_4gb_chunk* chunk)
 {
+    if(chunk == 0) return;
     for(int i = 0; i < 1024; ++i)
     {
         uint32_t entry = chunk->directory_entry[i];
@@ -82,6 +83,42 @@ int paging_set(uint32_t* directory, void* virt, uint32_t val) {
     uint32_t* table = (uint32_t*)(entry & 0xFFFFF000);
     table[table_index] = val; 
 
+    return res;
+}
+
+void* paging_align_address(void* ptr)
+{
+    if((uint32_t)ptr % PAGING_PAGE_SIZE)
+    {
+        return (void*)((uint32_t)ptr + PAGING_PAGE_SIZE - ((uint32_t)ptr % PAGING_PAGE_SIZE));
+    }
+    return ptr;
+}
+
+int paging_map(uint32_t* directory, void* virt, void* phys, int flags)
+{
+    if(((unsigned int)virt % PAGING_PAGE_SIZE) || ((unsigned int)phys % PAGING_PAGE_SIZE))
+    {
+        return -EINVARG;
+    }
+
+    return paging_set(directory, virt, (uint32_t)phys | flags);
+}
+
+int paging_map_range(uint32_t* directory, void* virt, void* phys, int count, int flags)
+{
+    int res = 0;
+    for(int i = 0; i < count; ++i)
+    {
+        res = paging_map(directory, virt, phys, flags);
+        #warning 作者这里写的是 res == 0, 很明显他是错的
+        if(res != KERNEL_ALL_OK)
+            break;
+
+        virt += PAGING_PAGE_SIZE;
+        phys += PAGING_PAGE_SIZE;
+    }
+out:
     return res;
 }
 

@@ -1,6 +1,7 @@
 [BITS 32]
 section .asm
 
+; 页表, gdt, ip, flags, 栈指针，通用寄存器，以上是进程的上下文
 ; struct registers
 ; {
 ;     uint32_t edi;
@@ -22,7 +23,7 @@ global task_return
 global restore_general_purpose_registers
 global user_registers
 
-
+; 这个函数假装我们在中断处理中，然后伪造一个中断返回从而从内核态进入用户态
 ; void task_return(struct registers* regs)
 task_return:
     mov ebp, esp
@@ -34,7 +35,7 @@ task_return:
 
     ; regs
     mov ebx, [ebp + 4]
-    ;warning 为什么要设置段寄存器，我们明明没有用到段，而且这里存的应该是gdt的偏移量 + CPL
+    ;learn 为什么要设置段寄存器，我们明明没有用到段，而且这里存的应该是gdt的偏移量 + CPL
     ; push the data segment
     push dword [ebx + 44]
     ; push the stack address
@@ -60,7 +61,7 @@ task_return:
     mov fs, ax
     mov gs, ax
 
-    ;warning 这里原作者写的是 ebx + 4, 很明显他是错的
+    ; 这里原作者写的是 ebx + 4, 很明显他是错的
     push dword [ebp + 4]
     call restore_general_purpose_registers
     add esp, 4
@@ -82,17 +83,16 @@ restore_general_purpose_registers:
     mov eax, [ebx + 24]
     mov ebx, [ebx + 12]
 
-    ;warning 这里真的要 pop ebp 吗？这不是把 ebp 破坏了吗？
-    pop ebp
+    ; 原作者写的是 pop ebp, 很明显那会破坏ebp
+    add esp, 4
+    ; 由此可以看出 ret 和 ebp 无关，和 esp 有关
     ret
 
 ; void user_registers()
 user_registers:
     ; user data segment
-    ; 这个0x23是0x20 + 3, 0x20是因为user data segment的gdt是第5个，所以偏移量是0x20
-    ; 因为gdt的偏移量是8的倍数，所以低三位都是0，所以用低两位来存储CPL，user land的CPL是3，所以是0x20 + 3 = 0x23
     mov ax, 0x23
-    ;warning 其实我不懂这些段寄存器都是用来干什么的，但应该是忽略了段这个东西
+    ;learn 其实我不懂这些段寄存器都是用来干什么的，但应该是忽略了段这个东西
     mov ds, ax
     mov es, ax
     mov fs, ax

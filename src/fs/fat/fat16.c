@@ -187,8 +187,8 @@ static int fat16_get_fat_entry(struct disk* disk, int cluster)
     }
 
     int fat_table_position = fat16_get_fat_sector(private) * disk->sector_size;
-    #warning author write "fat_table_position * (cluster * KERNEL_FAT16_FAT_ENTRY_SIZE));" \
-        obviously, that is wrong.
+    // author write "fat_table_position * (cluster * KERNEL_FAT16_FAT_ENTRY_SIZE));"
+    // obviously, that is wrong.
     res = diskstreamer_seek(stream, fat_table_position + (cluster * KERNEL_FAT16_FAT_ENTRY_SIZE));
     if(res < 0)
     {

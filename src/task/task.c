@@ -46,6 +46,8 @@ struct task* task_new(struct process* process)
     {
         task_head = task;
         task_tail = task;
+        // 以前没有下面这段，但是没有的话，task_run_first_ever_task()会出错
+        current_task = task;
         goto out;
     }    
     
@@ -140,6 +142,6 @@ void task_run_first_ever_task()
         panic("task_run_first_ever_task(): No current task exists!\n");
     }
 
-    task_switch(current_task);
-    task_return(&current_task->registers);
+    task_switch(task_head);
+    task_return(&task_head->registers);
 }

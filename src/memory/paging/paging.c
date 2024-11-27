@@ -111,8 +111,8 @@ int paging_map_range(uint32_t* directory, void* virt, void* phys, int count, int
     for(int i = 0; i < count; ++i)
     {
         res = paging_map(directory, virt, phys, flags);
-        #warning 作者这里写的是 res == 0, 很明显他是错的
-        if(res != KERNEL_ALL_OK)
+        // 作者这里写的是 res == 0, 很明显他是错的
+        if(res < 0)
             break;
 
         virt += PAGING_PAGE_SIZE;
@@ -147,9 +147,9 @@ int paging_map_to(uint32_t* directory, void* virt, void* phys, void* phys_end, i
         goto out;
     }
 
-    #warning 如果以后换成不连续的内存分配, 那么这里还要改一下, 准确的说有很多地方都要改，因为在内核代码中申请完空间没有建立 \
-        内存映射, 因此在内核代码看来申请的空间是不连续的, 而用户态由于有页表映射，所以没有这个问题。那是不是说内核必须申请连续 \
-        的空间, 而用户程序则无所谓呢? 日后更新内存管理的时候要考虑到这一点.
+    // learn 如果以后换成不连续的内存分配, 那么这里还要改一下, 准确的说有很多地方都要改，因为在内核代码中申请完空间没有建立
+    // 内存映射, 因此在内核代码看来申请的空间是不连续的, 而用户态由于有页表映射，所以没有这个问题。那是不是说内核必须申请连续
+    // 的空间, 而用户程序则无所谓呢? 日后更新内存管理的时候要考虑到这一点.
     uint32_t total_bytes = phys_end - phys;
     int total_pages = total_bytes / PAGING_PAGE_SIZE;
     res = paging_map_range(directory, virt, phys, total_pages, flags);

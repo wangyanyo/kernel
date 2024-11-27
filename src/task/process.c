@@ -149,7 +149,8 @@ static int process_load_for_slot(const char* filename, struct process** process,
     if(ISERR(task))
     {
         res = ERROR_I(task);
-        #warning 作者这里没加 goto out, 很显然他做错了
+        // 作者这里没加 goto out, 很显然他做错了
+        _process->task = NULL;
         goto out;
     }
 

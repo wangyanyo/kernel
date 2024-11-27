@@ -35,8 +35,8 @@ int tonumericdigit(char c)
 char* strncpy(char* dest, const char* src, int count)
 {
     int i;
-    #warning 原作者这里写的是 i < count - 1, 很明显他是错的
-    for(i = 0; i < count; ++i)
+    // 这里确实应该是 i < count - 1, 因为我们调用的时候 count = sizeof(dest), 我们要留一个位置
+    for(i = 0; i < count - 1; ++i)
     {
         if(src[i] == 0x00)
             break;

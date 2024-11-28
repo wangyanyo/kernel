@@ -61,7 +61,6 @@ task_return:
     mov fs, ax
     mov gs, ax
 
-    ; 这里原作者写的是 ebx + 4, 很明显他是错的
     push dword [ebp + 4]
     call restore_general_purpose_registers
     add esp, 4

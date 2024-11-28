@@ -27,7 +27,7 @@ struct paging_4gb_chunk *paging_new_4gb(uint8_t flags)
     return chunk_4gb;
 }
 
-void paging_free_chunk(struct paging_4gb_chunk* chunk)
+void paging_free_4gb(struct paging_4gb_chunk* chunk)
 {
     if(chunk == 0) return;
     for(int i = 0; i < 1024; ++i)

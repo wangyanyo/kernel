@@ -9,12 +9,12 @@
 #include "pparser.h"
 #include "string/string.h"
 
-struct filesystem* filesystems[KERNEL_MAX_FILESYSTEM];
+struct filesystem* filesystems[KERNEL_MAX_FILESYSTEMS];
 struct file_descriptor* file_descriptors[KERNEL_MAX_FILE_DESCRIPTORS];
 
 static struct filesystem** fs_get_free_filesystem() 
 {
-    for(int i = 0; i < KERNEL_MAX_FILESYSTEM; ++i) 
+    for(int i = 0; i < KERNEL_MAX_FILESYSTEMS; ++i) 
     {
         if(filesystems[i] == 0)
         {
@@ -173,7 +173,7 @@ static void file_free_descriptor(struct file_descriptor* desc)
 
 struct filesystem* fs_resolve(struct disk* disk) 
 {
-    for(int i = 0; i < KERNEL_MAX_FILESYSTEM; ++i) 
+    for(int i = 0; i < KERNEL_MAX_FILESYSTEMS; ++i) 
     {
         if(filesystems[i] != 0 && filesystems[i]->resolve(disk) == 0)
         {

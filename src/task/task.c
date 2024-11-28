@@ -12,7 +12,7 @@ struct task* task_tail = 0;
 static int task_init(struct task* task, struct process* process)
 {
     memset(task, 0, sizeof(struct task));
-    task->page_directory = paging_new_4gb(PAGING_IS_WRITEABLE | PAGING_IS_PRESENT);
+    task->page_directory = paging_new_4gb(PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);
     if(!task->page_directory)
     {
         return -EIO;
@@ -20,6 +20,7 @@ static int task_init(struct task* task, struct process* process)
 
     task->registers.ip = KERNEL_PROGRAM_VIRTUAL_ADDRESS;
     task->registers.ss = USER_DATA_SEGMENT;
+    task->registers.cs = USER_CODE_SEGMENT;
     task->registers.esp = KERNEL_PROGRAM_VIRTUAL_STACK_ADDRESS_START;
     task->process = process;
 
@@ -42,11 +43,10 @@ struct task* task_new(struct process* process)
         goto out;
     }
 
-    if(!task_head)
+    if(task_head == 0)
     {
         task_head = task;
         task_tail = task;
-        // 以前没有下面这段，但是没有的话，task_run_first_ever_task()会出错
         current_task = task;
         goto out;
     }    
@@ -58,7 +58,7 @@ struct task* task_new(struct process* process)
 out:
     if(ISERR(res) && task)
     {
-        kfree(task);
+        task_free(task);
         return ERROR(res);
     }
     return task;
@@ -114,7 +114,7 @@ static void task_list_remove(struct task* task)
 int task_free(struct task* task)
 {
     if(task == 0) return 0;
-    paging_free_chunk(task->page_directory);
+    paging_free_4gb(task->page_directory);
     task_list_remove(task);
 
     kfree(task);
@@ -137,9 +137,10 @@ int task_page()
 
 void task_run_first_ever_task()
 {
-    if(!current_task)
+    #warning 作者这里用的是 if(!current_task) 我觉得不符合逻辑，应该用 if(!task_head)
+    if(!task_head)
     {
-        panic("task_run_first_ever_task(): No current task exists!\n");
+        panic("task_run_first_ever_task(): No task_head exists!\n");
     }
 
     task_switch(task_head);

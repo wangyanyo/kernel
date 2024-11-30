@@ -84,7 +84,7 @@ static int process_map_binary(struct process* process)
 
     #warning 原作者这里没加"res =", 很明显他是错的
     #warning 而且为什么没有定位 process->stack, 感觉这个有问题
-    res = paging_map_to(process->task->page_directory->directory_entry, (void*)KERNEL_PROGRAM_VIRTUAL_ADDRESS, 
+    res = paging_map_to(process->task->page_directory, (void*)KERNEL_PROGRAM_VIRTUAL_ADDRESS, 
         process->ptr, paging_align_address(process->ptr + process->size), 
         PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL | PAGING_IS_WRITEABLE);
 

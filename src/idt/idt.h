@@ -33,11 +33,15 @@ struct interrupt_frame {
     uint32_t ss;
 }__attribute__((packed));
 
+typedef void *(*ISR80H_COMMAND)(struct interrupt_frame* frame);
+
 void idt_init();
 void enable_interrupts();
 void disable_interrupts();
 
 #warning 这里为什么返回 void *
 void *isr80h_handler(int commnd, struct interrupt_frame* frame);
+
+void isr80h_register_command(int command_id, ISR80H_COMMAND command);
 
 #endif

@@ -5,6 +5,9 @@
 #include "io/io.h"
 #include "task/task.h"
 #include "kernel.h"
+#include "task/task.h"
+
+static ISR80H_COMMAND isr80h_commands[KERNEL_MAX_ISR80H_COMMANDS];
 
 struct idt_desc idt_descriptors[KERNEL_TOTAL_INTERRUPTS];
 struct idtr_desc idtr_descriptor;
@@ -12,6 +15,7 @@ struct idtr_desc idtr_descriptor;
 extern void idt_load(struct idtr_desc* ptr);
 extern void int21h();
 extern void no_interrupt();
+extern void isr80h_wrapper();
 
 void int21h_handler()
 {
@@ -53,15 +57,41 @@ void idt_init()
     idt_set(0, idt_zero);
     idt_set(0x21, int21h);
 
+    idt_set(0x80, isr80h_wrapper);
 
     // Load the interrupt descriptor table
     idt_load(&idtr_descriptor);
 }
 
-#warning 这里应该返回void *, 但是原作者返回了void
-void *isr80h_handle_commnd(int commnd, struct interrupt_frame* frame)
+void isr80h_register_command(int command_id, ISR80H_COMMAND command) 
 {
+    if(command_id <= 0 || command_id >= KERNEL_MAX_ISR80H_COMMANDS) {
+        panic("The command is out of bounds\n");
+    }
 
+    if(isr80h_commands[command_id]) {
+        panic("Your attempting to overwrite an existing command\n");
+    }
+
+    isr80h_commands[command_id] = command;
+}
+
+void *isr80h_handle_commnd(int command, struct interrupt_frame* frame)
+{
+    void *result = 0;
+    if(command <= 0 || command >= KERNEL_MAX_ISR80H_COMMANDS) {
+        return 0;
+    }
+
+    ISR80H_COMMAND command_func = isr80h_commands[command];
+
+    if(!command_func) {
+        return 0;
+    }
+
+    result = command_func(frame);
+
+    return result;
 }
 
 void *isr80h_handler(int commnd, struct interrupt_frame* frame)

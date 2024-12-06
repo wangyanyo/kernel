@@ -11,6 +11,8 @@ void kernel_main();
 void print(const char* str);
 void print_num(int num);
 void panic(const char* msg);
+void kernel_page();
+void kernel_registers();
 
 #define ERROR(value) (void*)value
 #define ERROR_I(value) (int)value

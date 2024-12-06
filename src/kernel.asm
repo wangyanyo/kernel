@@ -1,6 +1,7 @@
 [BITS 32]
 
 global _start
+global kernel_registers
 extern kernel_main
 
 CODE_SEG equ 0x08
@@ -35,5 +36,15 @@ _start:
     call kernel_main
 
     jmp $
+
+kernel_registers:
+    ; 原作者这里写的是10, 很明显他是错的
+    mov ax, 0x10
+    mov ds, ax
+    mov ss, ax
+    mov es, ax
+    mov gs, ax
+    mov fs, ax
+    ret
 
 times 512-($ - $$) db 0

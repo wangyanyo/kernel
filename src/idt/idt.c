@@ -3,6 +3,9 @@
 #include "kernel.h"
 #include "memory/memory.h"
 #include "io/io.h"
+#include "task/task.h"
+#include "kernel.h"
+
 struct idt_desc idt_descriptors[KERNEL_TOTAL_INTERRUPTS];
 struct idtr_desc idtr_descriptor;
 
@@ -53,4 +56,20 @@ void idt_init()
 
     // Load the interrupt descriptor table
     idt_load(&idtr_descriptor);
+}
+
+#warning 这里应该返回void *, 但是原作者返回了void
+void *isr80h_handle_commnd(int commnd, struct interrupt_frame* frame)
+{
+
+}
+
+void *isr80h_handler(int commnd, struct interrupt_frame* frame)
+{
+    void *res = 0;
+    kernel_page();
+    task_current_save_state(frame);
+    res = isr80h_handle_commnd(commnd, frame);
+    task_page();
+    return res;
 }

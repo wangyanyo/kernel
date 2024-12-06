@@ -97,6 +97,12 @@ struct gdt_structured gdt_structured[KERNEL_TOTAL_GDT_SEGMENTS] = {
     {.base = (uint32_t)&tss, .limit=sizeof(tss), .type = 0xE9}      // TSS Segment
 };
 
+void kernel_page()
+{
+    kernel_registers();
+    paging_switch(kernel_chunk);
+}
+
 void kernel_main() {
     // 初始化终端
     terminal_initialize();

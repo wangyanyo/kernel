@@ -38,7 +38,6 @@ _start:
     jmp $
 
 kernel_registers:
-    ; 原作者这里写的是10, 很明显他是错的
     mov ax, 0x10
     mov ds, ax
     mov ss, ax

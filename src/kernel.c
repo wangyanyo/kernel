@@ -14,6 +14,7 @@
 #include "task/tss.h"
 #include "task/process.h"
 #include "status.h"
+#include "isr80h/isr80h.h"
 
 uint16_t* vedio_mem = 0;
 uint16_t terminal_row = 0;
@@ -139,6 +140,9 @@ void kernel_main() {
     paging_switch(kernel_chunk);
 
     enable_paging();
+
+    // 注册系统调用
+    isr80h_register_commands();
 
     struct process* process = 0;
     int res = process_load("0:/blank.bin", &process);

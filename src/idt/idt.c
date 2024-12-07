@@ -65,7 +65,7 @@ void idt_init()
 
 void isr80h_register_command(int command_id, ISR80H_COMMAND command) 
 {
-    if(command_id <= 0 || command_id >= KERNEL_MAX_ISR80H_COMMANDS) {
+    if(command_id < 0 || command_id >= KERNEL_MAX_ISR80H_COMMANDS) {
         panic("The command is out of bounds\n");
     }
 
@@ -79,7 +79,7 @@ void isr80h_register_command(int command_id, ISR80H_COMMAND command)
 void *isr80h_handle_commnd(int command, struct interrupt_frame* frame)
 {
     void *result = 0;
-    if(command <= 0 || command >= KERNEL_MAX_ISR80H_COMMANDS) {
+    if(command < 0 || command >= KERNEL_MAX_ISR80H_COMMANDS) {
         return 0;
     }
 

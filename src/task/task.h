@@ -52,4 +52,6 @@ void task_return(struct registers* regs);
 void restore_general_purpose_registers(struct registers* regs);
 void user_registers();
 
+int copy_string_from_task(struct task *task, void *virtual, void *phys, int max);
+
 #endif

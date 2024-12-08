@@ -5,6 +5,8 @@
 #include "config.h"
 #include "memory/memory.h"
 #include "idt/idt.h"
+#include "memory/paging/paging.h"
+#include "string/string.h"
 
 struct task* current_task = 0;
 struct task* task_head = 0;
@@ -172,4 +174,41 @@ void task_current_save_state(struct interrupt_frame* frame)
 
     struct task *task = task_current();
     task_save_state(task, frame);
+}
+
+int copy_string_from_task(struct task *task, void *virtual, void *phys, int max)
+{
+    int res = 0;
+    #warning 作者这里写的是 max >= PAGING_PAGE_SIZE, 我觉得可以等于
+    #warning 这里只能复制小于一个页的字符串, 我觉得可以改进
+    if(max > PAGING_PAGE_SIZE) {
+        res = -EINVARG;
+        goto out;
+    }
+
+    #warning 其实这里还有一种情况, 那就是tmp==virtual%4096的情况, 可以选一个virtual永远不会等于的值, 比如virtual的下一页
+    void *tmp = kzalloc(max);
+    if(!tmp) {
+        res = -ENOMEM;
+        goto out;
+    }
+
+    uint32_t old_entry = paging_get(task->page_directory, tmp);
+    paging_map(task->page_directory, tmp, tmp, PAGING_IS_WRITEABLE | PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);
+    paging_switch(task->page_directory);
+    strncpy(tmp, virtual, max);
+    kernel_page();
+
+    res = paging_set(task->page_directory->directory_entry, tmp, old_entry);
+    if(res < 0) {
+        res = -EIO;
+        goto out_free;
+    }
+
+    strncpy(phys, tmp, max);
+
+out_free:
+    kfree(tmp);
+out:
+    return res;
 }

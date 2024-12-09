@@ -54,4 +54,7 @@ void user_registers();
 
 int copy_string_from_task(struct task *task, void *virtual, void *phys, int max);
 
+int task_page_task(struct task *task);
+void *task_get_stack_item(struct task *task, int index);
+
 #endif

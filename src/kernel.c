@@ -79,6 +79,12 @@ void print_num(int num) {
     }
 }
 
+void print_num_ln(int num)
+{
+    print_num(num);
+    print("\n");
+}
+
 void panic(const char *msg)
 {
     print(msg);

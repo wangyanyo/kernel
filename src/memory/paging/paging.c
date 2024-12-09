@@ -111,7 +111,6 @@ int paging_map_range(struct paging_4gb_chunk* directory, void* virt, void* phys,
     for(int i = 0; i < count; ++i)
     {
         res = paging_map(directory, virt, phys, flags);
-        // 作者这里写的是 res == 0, 很明显他是错的
         if(res < 0)
             break;
 
@@ -158,12 +157,14 @@ out:
     return res;
 }
 
+#warning 作者在这里使用的是uint32_t* directory, 我觉得要延续前几个API的风格, 用struct paging_4gb_chunk* 做参数
 uint32_t paging_get(struct paging_4gb_chunk *chunk, void *virt)
 {
     uint32_t *directory = chunk->directory_entry;
     uint32_t directory_index = 0;
     uint32_t table_index = 0;
-    paging_get_indexes(virt, &directory_index, &table_index);
+    #warning 我觉得这里要加上paging_align_address(virt), 但是作者只用了virt, 他是错的
+    paging_get_indexes(paging_align_address(virt), &directory_index, &table_index);
     uint32_t entry = directory[directory_index];
     uint32_t *table = (uint32_t *)(entry & 0xFFFFF000);
     return table[table_index];

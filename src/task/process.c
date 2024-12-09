@@ -96,6 +96,16 @@ static int process_map_memory(struct process* process)
     int res = 0;
     // 和process_load_data一样，未来还会更新。
     res = process_map_binary(process);
+    if(res < 0) {
+        goto out;
+    }
+
+    // 映射用户栈，但我感觉这个栈怪怪的，这个栈是小于0x400000的，也就是小于程序初始地址
+    paging_map_to(process->task->page_directory, (void *)KERNEL_PROGRAM_VIRTUAL_STACK_ADDRESS_END, process->stack, 
+        paging_align_address(process->stack + KERNEL_USER_PROGRAM_STACK_SIZE), 
+        PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL | PAGING_IS_WRITEABLE);
+
+out:
     return res;
 }
 

@@ -12,6 +12,7 @@ void print(const char* str);
 void print_num(int num);
 void panic(const char* msg);
 void kernel_page();
+void print_num_ln(int num);
 void kernel_registers();
 
 #define ERROR(value) (void*)value

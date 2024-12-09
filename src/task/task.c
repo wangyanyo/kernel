@@ -212,3 +212,27 @@ out_free:
 out:
     return res;
 }
+
+int task_page_task(struct task *task)
+{
+    user_registers();
+    paging_switch(task->page_directory);
+    return 0;
+}
+
+void *task_get_stack_item(struct task *task, int index)
+{
+    void *result = 0;
+    
+    uint32_t* sp_ptr = (uint32_t *)task->registers.esp;
+
+    task_page_task(task);
+
+    #warning 如果参数不是四个字节怎么办? 比如是一个char, 还有就是result是在内核的栈里, 在用户态是访问不到这个result的 \
+        所以这个result是默认使用寄存器存储的吗? 
+    result = (void *) sp_ptr[index];
+
+    kernel_page();
+
+    return result;
+}

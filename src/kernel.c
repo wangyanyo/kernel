@@ -114,8 +114,6 @@ void kernel_main() {
     // 初始化终端
     terminal_initialize();
 
-    print("Hello World!\ntest\n");
-
     memset(gdt_real, 0x00, sizeof(gdt_real));
     gdt_structured_to_gdt(gdt_real, gdt_structured, KERNEL_TOTAL_GDT_SEGMENTS);
     gdt_load(gdt_real, sizeof(gdt_real));

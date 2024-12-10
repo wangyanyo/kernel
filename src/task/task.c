@@ -179,9 +179,8 @@ void task_current_save_state(struct interrupt_frame* frame)
 int copy_string_from_task(struct task *task, void *virtual, void *phys, int max)
 {
     int res = 0;
-    #warning 作者这里写的是 max >= PAGING_PAGE_SIZE, 我觉得可以等于
     #warning 这里只能复制小于一个页的字符串, 我觉得可以改进
-    if(max > PAGING_PAGE_SIZE) {
+    if(max >= PAGING_PAGE_SIZE) {
         res = -EINVARG;
         goto out;
     }
@@ -204,7 +203,8 @@ int copy_string_from_task(struct task *task, void *virtual, void *phys, int max)
         res = -EIO;
         goto out_free;
     }
-
+    
+    // 这里不用给字符串后面加0, 因为tmp一开始就全是0, 而且 max < PAGING_PAGE_SIZE
     strncpy(phys, tmp, max);
 
 out_free:

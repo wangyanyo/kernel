@@ -7,6 +7,7 @@
 #include "memory/heap/kheap.h"
 #include "string/string.h"
 
+#warning current_process 和 current_task 的区别是什么? 至今没有函数设置 current_process
 static struct process* current_process = 0;
 
 static struct process* processes[KERNEL_MAX_PROCESSES] = {};
@@ -21,7 +22,7 @@ struct process* process_current()
     return current_process;
 }
 
-static struct process* process_get(int process_id)
+struct process* process_get(int process_id)
 {
     if(process_id < 0 || process_id >= KERNEL_MAX_PROCESSES)
     {

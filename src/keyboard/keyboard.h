@@ -1,5 +1,5 @@
-#ifndef KEYBORAD_H
-#define KEYBORAD_H
+#ifndef KEYBOARD_H
+#define KEYBOARD_H
 
 struct process;
 

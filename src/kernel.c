@@ -111,6 +111,11 @@ void kernel_page()
     paging_switch(kernel_chunk);
 }
 
+void pic_timer_callback()
+{
+    print("Timer activated\n");
+}
+
 void kernel_main() {
     // 初始化终端
     terminal_initialize();
@@ -151,6 +156,8 @@ void kernel_main() {
 
     // 初始化键盘
     keyboard_init();
+
+    idt_register_interrupt_callback(0x20, pic_timer_callback);
 
     struct process* process = 0;
     int res = process_load("0:/blank.bin", &process);

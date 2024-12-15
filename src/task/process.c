@@ -7,7 +7,6 @@
 #include "memory/heap/kheap.h"
 #include "string/string.h"
 
-#warning current_process 和 current_task 的区别是什么? 至今没有函数设置 current_process
 static struct process* current_process = 0;
 
 static struct process* processes[KERNEL_MAX_PROCESSES] = {};
@@ -20,6 +19,11 @@ static void process_init(struct process* process)
 struct process* process_current()
 {
     return current_process;
+}
+
+void process_switch(struct process* process)
+{
+    current_process = process;
 }
 
 struct process* process_get(int process_id)
@@ -211,5 +215,15 @@ int process_load(const char* filename, struct process** process)
     res = process_load_for_slot(filename, process, process_slot);
 
 out:
+    return res;
+}
+
+int process_load_switch(const char* filename, struct process** process)
+{
+    int res = process_load(filename, process); 
+    if(res == KERNEL_ALL_OK) {
+        process_switch(*process);
+    } 
+
     return res;
 }

@@ -40,7 +40,8 @@ void idt_init();
 void enable_interrupts();
 void disable_interrupts();
 
-#warning 这里为什么返回 void *
+// 这里的返回void *是一个在C语言中常用的技术，比如你想返回多个值，那么你就把这些值放进一个struct里，并返回该struct的地址
+// 当然 void * 还可以很方便的强制转换成 int, long 这些，总之很方便。
 void *isr80h_handler(int commnd, struct interrupt_frame* frame);
 
 void isr80h_register_command(int command_id, ISR80H_COMMAND command);

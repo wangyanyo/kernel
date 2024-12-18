@@ -33,6 +33,7 @@ void classic_keyboard_handle_interrupt();
 
 static int classic_keyboard_init()
 {
+    // 如果要在classic_keyboard_init()注册中断的话，那有多个键盘只能注册链表中最后一个键盘的处理函数了
     idt_register_interrupt_callback(ISR_KEYBOARD_INTERRUPT, classic_keyboard_handle_interrupt);
     // enable ps2
     outb(PS2_PORT, PS2_COMMAND_ENABLE_FIRST_PORT);
@@ -62,11 +63,20 @@ void classic_keyboard_handle_interrupt()
     uint8_t scancode = insb(CLASSIC_INPUT_PORT);
     insb(CLASSIC_INPUT_PORT);
 
-    char c = classic_keyboard_scancode_to_char(scancode);
-    if(c != 0) {
-        keyboard_push(c);
+    // 键盘会发送两次中断，一次是press，一次是release, 我们忽略release
+    #warning 作者这里直接return了没有切回用户态, 很明显他是错的
+    if(scancode & CLASSIC_KEYBOARD_KEY_RELEASED) {
+        goto out;
     }
+
+    char c = classic_keyboard_scancode_to_char(scancode);
+    if(!c) {
+        goto out;
+    }
+
+    keyboard_push(c);
     
+out:
     // 确实，即使c==0也不能直接退出，因为还要切回用户态
     task_page();
 }

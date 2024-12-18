@@ -3,6 +3,7 @@
 #include "task/task.h"
 #include "status.h"
 #include "keyboard/classic.h"
+#include "idt/idt.h"
 
 static struct keyboard* keyboard_list_head = 0;
 static struct keyboard* keyboard_list_last = 0;
@@ -10,6 +11,10 @@ static struct keyboard* keyboard_list_last = 0;
 void keyboard_init()
 {
     keyboard_insert(classic_init());
+
+    #warning 如果要在classic_keyboard_init()注册中断的话，那有多个键盘只能注册链表中最后一个键盘的处理函数了 \
+        于是在这里重新注册一下，选择我们的初始键盘
+    idt_register_interrupt_callback(ISR_KEYBOARD_INTERRUPT, classic_keyboard_handle_interrupt);
 }
 
 int keyboard_insert(struct keyboard* keyboard)
@@ -62,6 +67,10 @@ void keyboard_push(char c)
 {
     struct process* process = process_current();
     if(!process) {
+        return;
+    }
+
+    if(c == 0) {
         return;
     }
 

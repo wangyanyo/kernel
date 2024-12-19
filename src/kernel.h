@@ -20,4 +20,6 @@ void terminal_writechar(char c, char color);
 #define ERROR_I(value) (int)value
 #define ISERR(value) ((int)value < 0)
 
+#define MIN(x, y) ((x) < (y)) ? (x) : (y)
+
 #endif

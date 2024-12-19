@@ -29,11 +29,35 @@ void terminal_putchar(int x, int y, char c, char color) {
     vedio_mem[(y * VGA_WIDTH) + x] = terminal_make_char(c, color);
 }
 
+void terminal_backspace()
+{
+    if(terminal_row == 0 && terminal_col == 0) {
+        return;
+    }
+
+    if(terminal_col == 0) {
+        terminal_row -= 1;
+        // 这里设置为VGA_WIDTH并没有错，是为了兼容后面的 terminal_col -= 1
+        terminal_col = VGA_WIDTH;
+    }
+
+    // terminal_col -= 1后，光标指向最后一个字符的位置
+    terminal_col -= 1;
+    #warning 原作者写的有问题, 他在这调用terminal_writechar, 然后terminal_col -= 1, 但是如果terminal_col==VGA_WIDTH-1,  \
+            那这个就是错误的, 因为terminal_col会变成负数, 像我这样直接调用terminal_putchar就不会出现这个问题
+    terminal_putchar(terminal_col, terminal_row, ' ', 0x0);
+}
+
+
 void terminal_writechar(char c, char color) {
-    // 它甚至连\n都没法处理，这也太底层了吧
     if(c == '\n') {
         terminal_row += 1;
         terminal_col = 0;
+        return;
+    }
+
+    if(c == 0x08) {
+        terminal_backspace();
         return;
     }
 

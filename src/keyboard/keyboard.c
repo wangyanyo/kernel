@@ -49,17 +49,24 @@ static int keyboard_get_head_index(struct process* process)
     return process->keyboard.head % sizeof(process->keyboard.buffer);
 }
 
-#warning 原作者这里写的有问题, 我将其修改, 这个函数是按下backspace后调用的吗? 要是字符已经被打印到屏幕上了怎么办? \
-    这个函数的backspace是针对缓冲区的
+#warning 原作者这里写的有问题, 我将其修改, 他没有判缓冲区为空的情况。但是这个函数并没被用到，这个函数本就是不合理的，因为字符 \
+        已经被pop并打印到屏幕上了, 这种情况你清理缓冲区有什么用呢？还是得操作屏幕。但是如果按我下面注释那样写，或许就没问题。
 void keyboard_backspace(struct process* process)
 {    
     process->keyboard.tail--;
     int real_index = keyboard_get_tail_index(process);
-    if(process->keyboard.buffer[real_index] != 0) {
+
+    /* 如果末尾是0x08，那就在末尾加一个0x08，交给terminal_backspace去处理。如果末尾不是0x08，那我们就删除最后一个字符 */
+    // if(process->keyboard.buffer[real_index] == 0 || process->keyboard.buffer[real_index] == 0x08) {
+    if(process->keyboard.buffer[real_index] == 0) {
         // 缓冲区为空
         process->keyboard.tail++;
+        /* push backspace 即 0x08 */
+        // keyboard_push(0x08);
         return;
     }
+    
+
     process->keyboard.buffer[real_index] = 0x00;   
 }
 

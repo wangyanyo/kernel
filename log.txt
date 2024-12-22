@@ -579,6 +579,41 @@
       含在gdt中，除了段的描述外gdt还存储了很多其他信息，比如一些权限，比如在gdt offset的低两位存储了隔离级别，我们还可以通过gdt进
       入64位的long Mode。
         也就是说，在保护模式下有用的是gdt，段只是gdt中包含的一部分，而且是被忽略的那一部分。
+        在Protect Mode中，段寄存器中存储的不是段的地址，而是selector, 所谓selector就是gdt表的偏移量，gdt存储了每个段的特征信
+      息，包括base address, limit 和 descriptor type。 
+        gdt中存储的具体信息:
+          The base address of the segment            段的起始地址
+          The default operation size in the segment  (16-bit/32-bit) 
+          The privilege level of the descriptor      (Ring 0 -> Ring 3)
+          The granularity                            (Segment limit is in byte/4kb units)
+          The segment limit                          (The maximum legal offset within the segment)
+          The segment presence                       (Is it present or not)
+          The descriptor type                        (0 = system; 1 = code/data)
+          The segment type                           (Code/Data/Read/Write/Accessed/Conforming/Non-Conforming/
+                                                      Expand-Up/Expand-Down)
+        如果gdt的descriptor type为0(0 = system), 那gdt就不是用来描述段的，而是一种特殊的门机制，用来描述LDT或TSS的位置，即
+      base存储位置，limit存储大小。
+        对于描述段的gdt，那么该段的范围就是[base, base + limit], 如果采用A:B的方式去访存，那么地址就是base(gdt[A]) + B,如
+      果你使用的是call, jmp这些(上面由介绍修改CS的方法)，还会同时修改CS。
+        其他规则和real mode相同，也就是说在访存时，会默认使用段寄存器，访问IP相关就用上base(gdt(cs)), 访问SP相关就加上base
+      (gdt(ss)), 访问其他相关则加上base(gdt(ds))。但是，现代操作系统都使用分页，并自动忽略了段寻址，因此base都是0，limit都是
+      0xFFFFF，只有其他的属性有所不同，亦或是类别不同(比如是LDT或TSS)。
+        
+      关于段有几个点要说明:
+        1.段是可以彼此覆盖的
+        2.CS,DS,ES,FS,GS,SS是彼此独立的
+        3.CS不能被直接改变
+
+      关于C的注释: 
+        1.所有现代C编译器都是采用平面内存模型。如果你想在C语言中使用分段，那么就不能使用现代编译器编译你的程序。
+        2.在此模型下，所有段都覆盖整个地址空间(在x86中是4GB)。本质上，我们忽略了A:B的A部分，这是因为大部分处理器都没有分段，编译
+          器更好优化。
+        3.你可以为每个特权集(通常是Ring 0 和 Ring 3)创建两个gdt描述符，一个用于Code，一个用于Data, 这两个gdt描述了完全相同的
+          段，而且在属性上也仅有一位不同(即Code/Data位)，代码描述符加载到CS中，数据描述符则由其他所有段寄存器共用，既然两个描述
+          符几乎相同，那么为什么要分成Code和Data呢？这是因为兼容分段的功能，x86无法舍弃分段，即使我们不使用分段，只使用属性也必须
+          兼容x86的分段规则。
+        
+      总的来说，在Protected Mode中: 分段包含在gdt内，我们忽略分段，同时也兼容分段，并使用gdt中的其他属性。
 
 待办: 
     1. 中断返回发生了什么?

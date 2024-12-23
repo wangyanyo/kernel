@@ -615,6 +615,53 @@
         
       总的来说，在Protected Mode中: 分段包含在gdt内，我们忽略分段，同时也兼容分段，并使用gdt中的其他属性。
 
+53. 8259 PIC
+    8259可编程控制器是x86体系最重要的芯片之一，没有它，x86就不会是中断驱动的体系结构。8259 PIC的功能是管理硬件中断，有了它CPU就
+  不用轮询硬件设备，可以直接响应中断。
+    在现代操作系统中，功能更强大的APIC已经取代旧的8259 PIC，因为要适配多核处理器。
+    一开始IBM的PC只有一个PIC芯片，提供了8个IRQ，即中断。后来的PC/AT加入了第二个PIC芯片，然后将两个PIC芯片级联，总共能个处理15个
+  IRQ。，这样的双PIC结构沿用至今，直到更高级的APIC出现。
+    对于处理器来说，PIC也是外部设备，需要通过in和out来沟通。每个PIC芯片都有两个I/O port，分别是Command port和Data Port，即:
+      Master Command Port:  0x20
+      Master Data Port:     0x21
+      Slave Command Port:   0xA0
+      Slave Data Port:      0xA1
+    对于PIC的编程，Real Mode 和 Protected Mode也有不同。
+    Real Mode:
+      IRQ 0~7 对应中断号 0x8~0xF
+      IRQ 8~15 对应中断号 0x70~0x77
+    Protected Mode:
+      Intel的CPU有硬件异常，Intel保留了31个CPU异常，对应中断号0x00~0x1F(csapp上有介绍)。为了不与CPU异常冲突，我们需要remap
+    PIC，通常的选择是将它们移动到可用范围的开始，即0x20为起始点，IRQ 0...0xF -> INT 0x20...0x28。这也是我们定时器中断的IRQ号
+    是0, 但是在Handler中其中断号是0x20的原因。前31个中断号被CPU异常占了，我们remap RIP通常以0x20(即32)为起点。并且IRQ的中断
+    号起点必须是8的倍数，因为要用低三位来识别是哪个ISR，所以0x20其实是一个一石二鸟的选择，既是8的倍数，也是可用范围的起点。
+      在Protected Mode给PIC的第一个指令就是初始化指令，即outb(0x20, 0x11)。如果我们不进行outb(0x20, 0x11), 那后续的out都
+    被理解成默认地设置mask，初始化后PIC会在data端口等待三个数据：
+        1. vector offset 即中断号的起点
+        2. 主从PIC如何相连
+        3. 额外的环境信息，0x1代表8086 mode
+      那么进入Protected Mode后remap PIC的代码就是:
+        // 保存mask
+        uint8_t a1 = inb(0x21);
+        uint8_t a2 = inb(0xA1);
+        // 初始化master PIC 和 Slave PIC
+        outb(0x20, 0x11);
+        outb(0xA0, 0x11);
+        // 设置主从的 vector offset
+        outb(0x21, 0x20);
+        outb(0xA1, 0x28);
+        // 主从PIC如何相连
+        outb(0x21, 4);
+        outb(0xA1, 2);
+        // 额外的环境信息，8086 mode
+        outb(0x21, 0x1);
+        outb(0xA1, 0x1);
+        // 恢复mask
+        outb(0x21, a1);
+        outb(0xA1, a2);
+      对PIC的数据端口out默认是设置mask，mask类似Linux信号的阻塞，设置了哪一个中断的mask就忽略哪一个中断。
+      PIC是什么？PIC怎么初始化？PIC如何设置mask？接触更高级的APIC
+
 待办: 
     1. 中断返回发生了什么?
     2. 用户页表基础下跳到内核代码时，发生了什么?

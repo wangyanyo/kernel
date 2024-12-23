@@ -36,9 +36,10 @@ task_return:
     ; regs
     mov ebx, [ebp + 4]
     ;learn 为什么要设置段寄存器，我们明明没有用到段，而且这里存的应该是gdt的偏移量 + CPL
-    ; push the data segment
-    push dword [ebx + 44]
+
     ; push the stack address
+    push dword [ebx + 44]
+    ; push the SP
     push dword [ebx + 40]
     
     ; push the flags

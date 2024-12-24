@@ -613,8 +613,17 @@
         所以有些寄存器时不能直接更改的，只能通过特殊的指令间接更改，比如 cs/ip, ss/sp，而其他的寄存器都是可以直接更改的。
         对于task_page()同样如此，它只能更改能够更改的寄存器，其他的要通过iret来更改。之所以在起始调用kernel_page()是为了让处理
       器完全进入内核态，在结尾调用task_page()是为了让其完全恢复用户态。因为特殊指令只会更改 cs/ip 和 ss/sp
-        其实我有点怀疑，栈里的cs/ip 和 ss/sp是什么时候推进去的？是int吗？还是pusha?
-
+        其实我有点怀疑，栈里的cs/ip 和 ss/sp是什么时候推进去的？是int吗？还是pusha?推到用户栈还是内核栈？应该是推到了内核栈，因
+      为我们iret的上下文是在内核栈，要进入用户栈，而我们不知道用户栈在哪，如果cs/ip 和 ss/sp推到用户栈那则是矛盾的，我们在内核栈
+      的环境下没办法利用这个信息。综上所述：int后，cs/ip 和 ss/sp被推到内核栈，但是这是int触发的还是pusha触发的？
+        答案是由int触发的，pusha是将通用寄存器压入栈中，user_registers()只是设置了可以直接更改的段寄存器，并没有设置通用寄存器，
+      因此我们通过pusha和popa来保存和恢复通用寄存器。
+        因此，int做了三件事: 首先从tss那里获得 ss/sp 并切换内核栈，然后用户态的 ss/sp 和 cs/ip 压到内核栈，最后根据 idtr 和中
+      断号，找到对应的idt，idt里存储了 cs/ip，切换到内核中断handler程序。
+        iret做了两件事: 首先将当前的 ss/sp 存到tss，然后用栈里的 ss/sp 和 cs/ip 恢复到用户进程。
+        当然，int和iret只是做了最特殊的那一部分，在handler程序中，还要做通用寄存器的保存和恢复，可修改段寄存器的更新，以及页表的
+      切换。这下就是彻底搞懂中断了，只剩下一片乌云，那就是在我们的kernel中，是碰巧实现在用户页表下也能成功访问内核handler代码的，
+      我想知道Linux是如何稳定并安全的实现这一点的。
 
 52. Segmention
       之前我对段的理解不全面，这次彻底搞懂。
@@ -769,6 +778,191 @@
     决定CPU处于Real Mode还是Protect Mode的最关键因素在于cr0的最低位，1代表Protect Mode，0代表Real Mode。
     Protect Mode和Real Mode的区别就是1.内存空间增长，2.能够使用虚拟内存，3.使用Rings限制可用指令集
     正是有了Protect Mode，才有了我们熟悉的Kernel，User land，MultiTask，虚拟内存 这些东西。
+
+57. x86 registers
+    之前我对x86的寄存器都是模糊不清的，不清楚都有哪些寄存器，不清楚这些寄存器都是干什么的，不能这样。(注: e是32位的意思)
+  第一部分：通用目的寄存器
+    eax   Accumulator         累加器
+    ebx   Base          
+    ecx   Counter             循环计数器
+    edx   Data
+    esi   Source        
+    edi   Destination   
+    esp   Stack Pointer       栈指针
+    ebp   Stack Base Pointer  栈基址针
+
+  第二部分: 指针寄存器
+    eip   Instruction Pointer 指令指针
+
+  第三部分: 段寄存器
+    CS    Code Segment              代码段，涉及ip的访存会用到
+    SS    Stack Segment             栈段，涉及sp的访存会用到
+    DS    Data Segment              数据段，其他访存要用到
+    ES    Extra Segment             额外段，功能未知
+    FS    General Purpose F Segment 通用目的F段
+    GS    General Purpose G Segment 通用目的G段
+
+  第四部分: EFLAGS Register
+   Bit   Label  Description                       
+    0 	  CF 	  Carry flag                      进位
+    2 	  PF 	  Parity flag                     奇偶校验
+    4 	  AF 	  Auxiliary flag                  辅助?
+    6 	  ZF 	  Zero flag                       零
+    7 	  SF 	  Sign flag                       符号
+    8 	  TF 	  Trap flag                       陷阱?
+    9 	  IF 	  Interrupt enable flag           中断启用
+    10 	  DF 	  Direction flag                  方向?
+    11 	  OF 	  Overflow flag                   溢出
+    12-13 IOPL 	I/O privilege level             I/O特权级别?
+    14 	  NT 	  Nested task flag                递归
+    16 	  RF 	  Resume flag                     恢复?
+    17 	  VM 	  Virtual 8086 mode flag          虚拟8086模式?
+    18 	  AC 	  Alignment check                 字节对齐检查
+    19 	  VIF 	Virtual interrupt flag          虚拟中断?
+    20 	  VIP 	Virtual interrupt pending       虚拟中断挂起?
+    21 	  ID 	  Able to use CPUID instruction   能够使用CPUID指令
+
+  第五部分: Control Registers (cr0 的 cr 就是control的意思)
+    CR0:
+      Bit Label 	Description
+      0 	PE 	  Protected Mode Enable   保护模式
+      1 	MP 	  Monitor co-processor    显示器协处理器?
+      2 	EM 	  x87 FPU Emulation       x87 FPU 仿真器?
+      3 	TS 	  Task switched           任务切换
+      4 	ET 	  Extension type          扩展类型?
+      5 	NE 	  Numeric error           数字错误?
+      16 	WP 	  Write protect           写保护?
+      18 	AM 	  Alignment mask          字节对齐标志
+      29 	NW 	  Not-write through       未写入
+      30 	CD 	  Cache disable           缓存禁用
+      31 	PG 	  Paging                  分页
+
+    CR1:
+      保留，CPU尝试访问它时将引发#UD异常
+
+    CR2:
+      0-31 (63) 	PFLA 	Page Fault Linear Address   页面错误线性地址?
+
+    CR3:
+      Bit 	   Label 	Description 	                  PAE 	         Long Mode
+      3 	      PWT 	Page-level Write-Through 	    (Not used) 	  (Not used if bit 17 of CR4 is 1)
+      4 	      PCD 	Page-level Cache Disable 	    (Not used) 	  (Not used if bit 17 of CR4 is 1)
+      12-31(63) PDBR 	Page Directory Base Register 	Base of PDPT 	Base of PML4T/PML5T 
+      PWT是页表等级的写标志
+      PCD是页表等级的缓存禁用
+      PDBR是页表基址
+
+    CR4:
+      Bit 	Label 	D       escription
+        0 	VME 	      Virtual 8086 Mode Extensions
+        1 	PVI 	      Protected-mode Virtual Interrupts
+        2 	TSD 	      Time Stamp Disable
+        3 	DE 	        Debugging Extensions
+        4 	PSE 	      Page Size Extension
+        5 	PAE 	      Physical Address Extension
+        6 	MCE 	      Machine Check Exception
+        7 	PGE 	      Page Global Enabled
+        8 	PCE 	      Performance-Monitoring Counter enable
+        9 	OSFXSR 	    Operating system support for FXSAVE and FXRSTOR instructions
+        10 	OSXMMEXCPT  Operating System Support for Unmasked SIMD Floating-Point Exceptions
+        11 	UMIP 	      User-Mode Instruction Prevention (if set, #GP on SGDT, SIDT, SLDT, SMSW, and STR 
+                      instructions when CPL > 0)
+        12 	LA57 	      57-bit linear addresses (if set, the processor uses 5-level paging otherwise it uses
+                      uses 4-level paging)
+        13 	VMXE 	      Virtual Machine Extensions Enable
+        14 	SMXE 	      Safer Mode Extensions Enable
+        16 	FSGSBASE 	  Enables the instructions RDFSBASE, RDGSBASE, WRFSBASE, and WRGSBASE
+        17 	PCIDE 	    PCID Enable
+        18 	OSXSAVE 	  XSAVE and Processor Extended States Enable
+        20 	SMEP 	      Supervisor Mode Execution Protection Enable
+        21 	SMAP 	      Supervisor Mode Access Prevention Enable
+        22 	PKE 	      Protection Key Enable
+        23 	CET 	      Control-flow Enforcement Technology
+        24 	PKS 	      Enable Protection Keys for Supervisor-Mode Pages
+      作用未知???
+
+    CR5-CR7:
+      保留，和CR1一样。
+
+    CR8:
+      Bit 	Label 	Description
+      0-3 	TPL 	Task Priority Level   任务优先级?
+
+  第六部分: Extended Control Registers
+    XCR0:
+      Bit 	Label 	Description
+      0 	X87 	x87 FPU/MMX support (must be 1)
+      1 	SSE 	XSAVE support for MXCSR and XMM registers
+      2 	AVX 	AVX enabled and XSAVE support for upper halves of YMM registers
+      3 	BNDREG 	MPX enabled and XSAVE support for BND0-BND3 registers
+      4 	BNDCSR 	MPX enabled and XSAVE support for BNDCFGU and BNDSTATUS registers
+      5 	opmask 	AVX-512 enabled and XSAVE support for opmask registers k0-k7
+      6 	ZMM_Hi256 	AVX-512 enabled and XSAVE support for upper halves of lower ZMM registers
+      7 	Hi16_ZMM 	AVX-512 enabled and XSAVE support for upper ZMM registers
+      9 	PKRU 	XSAVE support for PKRU register 
+    XCR0只有CR4的18位为1时才会启用。XCR0好像是和浮点数运算和视频服务相关的，因为我看到了AVX，XMM，YMM之类的字段。
+
+  第七部分: Debug Registers
+    DR0-DR3:
+      包含最多4个断点位置，如果启用分页，则转换为物理地址。原来由专门的寄存器来存储断点。
+
+    DR6:
+      It permits the debugger to determine which debug conditions have occurred.
+      Bits 0 through 3 indicates, when set, that it's associated breakpoint condition was met when a debug exception was generated.
+      Bit 13 indicates that the next instruction in the instruction stream accesses one of the debug registers.
+      Bit 14 indicates (when set) that the debug exception was triggered by the single-step execution mode (enabled with TF bit in EFLAGS).
+      Bit 15 indicates (when set) that the debug instruction resulted from a task switch where T flag in the TSS of target task was set.
+      Bit 16 indicates (when clear) that the debug exception or breakpoint exception occured inside an RTM region.
+    作用未知???
+
+    DR7:
+      Bit 	Description
+      0 	    Local DR0 breakpoint
+      1 	    Global DR0 breakpoint
+      2   	  Local DR1 breakpoint
+      3 	    Global DR1 breakpoint
+      4 	    Local DR2 breakpoint
+      5 	    Global DR2 breakpoint
+      6 	    Local DR3 breakpoint
+      7 	    Global DR3 breakpoint
+      16-17 	Conditions for DR0
+      18-19 	Size of DR0 breakpoint
+      20-21 	Conditions for DR1
+      22-23 	Size of DR1 breakpoint
+      24-25 	Conditions for DR2
+      26-27 	Size of DR2 breakpoint
+      28-29 	Conditions for DR3
+      30-31 	Size of DR3 breakpoint 
+      CR7标记断点的类型，local断点代表禁用硬件任务切换，global则不会。感觉禁用硬件切换有点暴力，只有在特殊场景才会用到，即使禁
+    用硬件任务切换进程页感知不到，难道在切换任务时也会保存恢复debug寄存器吗？
+
+  第七部分: Test Registers
+    Name 	      Description
+    TR3 - TR5 	Undocumented      未记录
+    TR6 	Test  command register  命令寄存器
+    TR7 	Test  data register     数据寄存器
+
+  第八部分: Protected Mode Registers
+    GDTR: 
+      Bits 	Label 	Description
+      0-15 	Limit 	(Size of GDT) - 1
+      16-47 Base 	  Starting address of GDT
+    GDTR里存的其实是GDT描述符的地址，GDT描述符里村的才是上面的Limit和Base, Base是gdt表的地址，Limit是gdt表的大小。
+
+    LDTR:
+      Bits 	Label 	Description
+      0-15 	Limit 	(Size of LDT) - 1
+      16-47 Base 	  Starting address of LDT
+    LDTR里是什么未知，是TSS吗？我想知道ltr对应的是哪个寄存器，是Test Register吗？不能吧
+
+    IDTR:
+      Bits 	Label 	Description
+      0-15 	Limit 	(Size of IDT) - 1
+      16-47 	Base 	Starting address of IDT
+    同GDTR一样，IDTR里存储的是idt描述符的地址，idt描述符里存储的是Base和Limit，Base里存的是idt表的地址，Limit里存的是idt表
+    的大小。
+
+    这下就知道x86里都有哪些寄存器了，并且也知道了大致的功能，不会再胡思乱想了。
 
 待办: 
     1. 中断返回发生了什么?
